@@ -1,3 +1,8 @@
+"""
+Module de gestion de stock et de préparation de colis.
+Ce module contient les classes nécessaires pour gérer un inventaire en FIFO,
+des alertes systèmes, et la préparation de colis en LIFO triée.
+"""
 import sys
 from collections import deque
 from dataclasses import dataclass
@@ -28,7 +33,7 @@ class GestionAlertes:
     """Gère le log des alertes avec un tampon circulaire (3 places)."""
 
     def __init__(self):
-        # [cite: 23] Structure STATIQUE, 3 places
+        # Structure STATIQUE, 3 places
         self.log = deque(maxlen=3)
 
     def ajouter_alerte(self, message: str):
@@ -37,7 +42,7 @@ class GestionAlertes:
         print(f"[ALERTE] {message}")
 
     def afficher_alertes(self):
-        """[cite: 22] Affiche de la plus ancienne à la plus récente."""
+        """Affiche de la plus ancienne à la plus récente."""
         print("\n--- JOURNAL DES ALERTES ---")
         if not self.log:
             print("Aucune alerte active.")
@@ -54,7 +59,7 @@ class GestionStock:
         self.SEUIL_MIN = 2  # Seuil pour déclencher l'alerte
 
     def ajouter_masse(self, chaine_saisie: str):
-        """[cite: 18] Saisie rapide ex: 'A1, B2, A1'."""
+        """Saisie rapide ex: 'A1, B2, A1'."""
         if not chaine_saisie:
             return
         items = [x.strip() for x in chaine_saisie.split(',')]
@@ -68,7 +73,7 @@ class GestionStock:
             if p.type_p not in self.stock:
                 self.stock[p.type_p] = deque()
 
-            # [cite: 9] FIFO: ajout à droite
+            # FIFO: ajout à droite
             self.stock[p.type_p].append(p)
             print(f"Stock + : {p}")
         except (IndexError, ValueError):
@@ -79,7 +84,7 @@ class GestionStock:
         if type_p not in self.stock or not self.stock[type_p]:
             return None
 
-        # [cite: 28] Sélection par Type et Volume
+        # Sélection par Type et Volume
         for i, prod in enumerate(self.stock[type_p]):
             if prod.volume == vol_demande:
                 del self.stock[type_p][i]
@@ -88,23 +93,31 @@ class GestionStock:
         return None
 
     def _verifier_seuil(self, type_p: str):
-        """[cite: 21] Vérifie si le stock est bas."""
+        """Vérifie si le stock est bas."""
         qte = len(self.stock[type_p])
         if qte < self.SEUIL_MIN:
-            # [cite: 14] Id de l'alarme
+            # Id de l'alarme
             self.alertes.ajouter_alerte(f"Rupture imminente {type_p} (Stock: {qte})")
 
 
 class GestionColis:
-    """Gère la création de colis (LIFO triée)."""
+    """
+    Gère la création de colis (LIFO triée).
+    Cette classe agit comme un orchestrateur.
+    """
+    # On supprime l'avertissement car cette classe sert de Service
+    # pylint: disable=too-few-public-methods
 
     def __init__(self, stock_manager: GestionStock, alerte_manager: GestionAlertes):
         self.stock_mgr = stock_manager
         self.alerte_mgr = alerte_manager
 
     def preparer_colis(self, chaine_commande: str):
-        """[cite: 27] Orchestre la création d'un colis."""
-        if not chaine_commande: return
+        """Orchestre la création d'un colis."""
+        # Correction C0321 : Séparation sur deux lignes
+        if not chaine_commande:
+            return
+
         produits_bruts = [x.strip() for x in chaine_commande.split(',')]
         produits_recuperes = []
 
@@ -115,7 +128,7 @@ class GestionColis:
             if p:
                 produits_recuperes.append(p)
 
-        # [cite: 30] Empilés du plus grand volume au plus petit
+        # Empilés du plus grand volume au plus petit
         pile_finale = sorted(produits_recuperes, key=lambda x: x.volume, reverse=True)
         self._afficher_colis(pile_finale)
 
@@ -132,11 +145,13 @@ class GestionColis:
         self.alerte_mgr.ajouter_alerte(f"Rupture stock: {code}")
         return None
 
-    def _afficher_colis(self, pile: List[Produit]):
+    # Correction R0201 : Passage en staticmethod car 'self' n'est pas utilisé
+    @staticmethod
+    def _afficher_colis(pile: List[Produit]):
         """Affiche le contenu final du colis de manière sobre."""
         # Affichage simple : [A3, B2, C1]
         contenu = ", ".join(str(p) for p in pile)
-        print(f"-> Colis assemblé (Fond -> Haut) : [{contenu}]")
+        print(f"-> Colis assemblé : [{contenu}]")
 
 
 # --- 3. INTERFACE (CLI) ---
@@ -147,7 +162,7 @@ def main():
     srv_stock = GestionStock(srv_alertes)
     srv_colis = GestionColis(srv_stock, srv_alertes)
 
-    # [cite: 18] Stock en dur
+    # Stock en dur
     print("Initialisation...")
     srv_stock.ajouter_masse("A1, A2, A3, B1, B2, C3, C3, A1")
 
