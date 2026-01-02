@@ -5,7 +5,7 @@ des alertes systèmes, et la préparation de colis en LIFO triée.
 """
 import sys
 from collections import deque
-from dataclasses import dataclass
+from dataclass import dataclass
 from typing import List, Dict, Optional
 
 
@@ -13,7 +13,7 @@ from typing import List, Dict, Optional
 
 @dataclass
 class Produit:
-    """Représente un produit avec son type et son volume."""
+    "Représente un produit avec son type et son volume."
     type_p: str
     volume: int
 
